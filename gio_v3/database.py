@@ -7229,6 +7229,65 @@ def init_db():
         except Exception as e:
             print(f"[DB] reminders vinculado_oikonomia migration warning: {e}")
 
+        # ── ACTA DIURNA — prioridad piano (2026-11-16 → 2027-02-16) ──────────
+        # (Va después de las migraciones de reminders: usa la columna tema.)
+        # A petición del usuario, 3 meses con el piano como prioridad
+        # (plan en docs/piano_plan.md):
+        #  · Eurythmia gana «Piano – Flowkey 10 min» (touch diario, noche, 2 pts),
+        #    «Piano – Pianoforall (sesión profunda)» (ancla lun/mié/vie, tarde,
+        #    con los MISMOS pts/EC que tenga hoy el ancla de CCNA) y «Grabar
+        #    pieza al terminar un libro de Pianoforall» (ocasional, los mismos
+        #    pts/EC que el bonus «Gol»). Se copian de la base, no del seed.
+        #  · Más «Baile — sesión profunda» (ancla jue/sáb, noche): se completa
+        #    al guardar la sesión en /eurythmia/ (eury_proxy), así que su XP y
+        #    sus EC son los de la sesión; aquí va con 0 pts para no cobrar doble.
+        #  · Logoi en pausa: el ancla de CCNA y los touches SoloLearn/Mimo, Leer
+        #    programación, 100 Días Python y Subir proyecto a GitHub se
+        #    desactivan (active=0, el historial en activity_logs no se toca);
+        #    «Resolver 5 problemas reales» pasa a ocasional (sin racha).
+        #  · Recordatorio único el 2027-02-16 para reactivar CCNA: el modelo no
+        #    tiene fechas de pausa, así que la reactivación es manual.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='piano_prioridad_2026_11'"
+        ).fetchone():
+            try:
+                ccna = db.execute("SELECT pts, ec FROM activity_defs WHERE key='ancla_ccna_prog'").fetchone()
+                gol = db.execute("SELECT pts, ec FROM activity_defs WHERE key='gol'").fetchone()
+                ccna_pts, ccna_ec = (ccna["pts"], ccna["ec"]) if ccna else (8, 3)
+                gol_pts, gol_ec = (gol["pts"], gol["ec"]) if gol else (2, 0)
+                db.executemany(
+                    """INSERT OR IGNORE INTO activity_defs
+                       (key, label, cat, pts, ec, tier, session, pillar, type, cadence, days_of_week, active, hidden, custom, sort_order)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,1,0,0,?)""",
+                    [
+                        ("piano_flowkey",      "Piano – Flowkey 10 min",                           "Baile", 2, 0,
+                         "micro", "night", "eury", "touch", "daily", None, 40),
+                        ("piano_pianoforall",  "Piano – Pianoforall (sesión profunda)",            "Baile", ccna_pts, ccna_ec,
+                         "alto", "afternoon", "eury", "ancla", "daily", "mon,wed,fri", 16),
+                        ("piano_grabar_libro", "Grabar pieza al terminar un libro de Pianoforall", "Baile", gol_pts, gol_ec,
+                         "micro", None, "eury", "ocasional", "daily", None, 41),
+                        ("ancla_baile",        "Baile — sesión profunda",                          "Baile", 0, 0,
+                         "alto", "night", "eury", "ancla", "daily", "thu,sat", 19),
+                    ])
+                db.execute("UPDATE activity_defs SET active=0 WHERE key IN "
+                           "('ancla_ccna_prog','sololearn','leer_prog','python100','github')")
+                db.execute("UPDATE activity_defs SET type='ocasional' WHERE key='resolver_codigo'")
+                db.execute("DELETE FROM pillar_focus WHERE pillar='logoi'")   # ningún touch de Logoi promovido a ancla
+                if SEMBRAR_DATOS_USUARIO:   # dato personal: ni tests ni la base de ejemplo (?demo=1)
+                    db.execute(
+                        """INSERT INTO reminders (description, type, target_date, next_date, is_active, created_at, tema)
+                           VALUES (?, 'unico', '2027-02-16', '2027-02-16', 1, datetime('now'), 'otros')""",
+                        ("Reactivar ancla CCNA / Programación y touches de Logoi (pausa por piano, ver docs/piano_plan.md)",))
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("piano_prioridad_2026_11",
+                     f"Piano en Eurythmia (Flowkey touch 2 pts; Pianoforall ancla lun/mié/vie {ccna_pts} pts {ccna_ec} EC; "
+                     f"grabar pieza ocasional {gol_pts} pts) + ancla de baile jue/sáb; Logoi en pausa hasta 2027-02-16.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] piano_prioridad_2026_11 migration warning: {e}")
+
         # ── COSMOPOLITISMO v2 (Sprint 1): score guardado de cada entrada del
         # journal (nullable: NULL si LanguageTool no respondió), rondas de
         # repaso ya premiadas (no duplicar XP por ronda) y los dos touches de

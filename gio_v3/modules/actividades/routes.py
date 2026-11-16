@@ -197,7 +197,7 @@ def index():
             seen.add(item["key"])
             # Actividades de baile que no son el touch base se registran en
             # /eurythmia/ (sesiones reales): se ven hechas si ahí hubo sesión hoy.
-            item["eury_proxy"] = item["pillar"] == "eury" and item["key"] != "lenguaje_corporal"
+            item["eury_proxy"] = adefs.es_proxy_eurythmia(item)
             item["done_ui"] = ctx["eurythmia_done"] if item["eury_proxy"] else bool(item.get("done"))
             by_pillar.setdefault(item["pillar"], []).append(item)
     # Anclas de hoy (handoff Acta v2, nota 2): bloque propio arriba, en orden
