@@ -194,6 +194,8 @@
           hideUndo(); toast('Removido');
         } else {
           toast('Deshecho');
+          // Un hito de una sola vez ya se había quitado de la lista: vuelve a aparecer
+          if (d.reactivated && !$('.acta-item[data-key="' + key + '"]')) setTimeout(function () { location.reload(); }, 600);
         }
         afterGam(d);
         if (d.one_time) setTimeout(function () { $$('.acta-item[data-key="' + key + '"]').forEach(function (i) { i.remove(); }); recount(); }, 700);

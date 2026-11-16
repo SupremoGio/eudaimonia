@@ -318,6 +318,14 @@ def update(key, **fields):
     return get_by_key(key)
 
 
+def reactivate(key):
+    """Vuelve a poner en el checklist una actividad desactivada (p. ej. un
+    hito one_time cuyo registro se deshizo el mismo día)."""
+    with get_db() as db:
+        db.execute("UPDATE activity_defs SET active=1 WHERE key=?", (key,))
+        db.commit()
+
+
 def deactivate(key):
     """Soft delete: se quita del checklist pero el historial en activity_logs queda intacto."""
     with get_db() as db:

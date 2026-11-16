@@ -7288,6 +7288,127 @@ def init_db():
             except Exception as e:
                 print(f"[DB] piano_prioridad_2026_11 migration warning: {e}")
 
+        # ── COSMOPOLITISMO — plan C1 de inglés y francés (2026-11) ───────────
+        # Plan en docs/idiomas_c1_plan.md. Los días de las anclas NO cambian
+        # (los que ya tenga la base): cada ancla de idioma se parte en dos,
+        # con los mismos pts/EC y franja:
+        #   · Sesión A (input: escucha + lectura) → el primer día de la semana
+        #     (la key existente, para que su historial siga ahí);
+        #   · Sesión B (output con corrección) → el resto de sus días
+        #     (key nueva <key>_b).
+        # Además: ancla «Repaso semanal EN+FR» el sábado por la tarde (mismos
+        # pts/EC que el ancla de inglés), touches opcionales (Anki los días
+        # sin sesión, lectura extensiva; la escucha extensiva es el «Podcast
+        # en idiomas» que ya existía), hitos del plan como ocasionales de una
+        # sola vez (one_time: dan su XP y se desactivan) y fuera el «Test
+        # certificación» (el plan no prepara exámenes). Los checkpoints de
+        # cada fase son recordatorios con fecha (solo con datos del usuario).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='idiomas_c1_plan_2026_11'"
+        ).fetchone():
+            try:
+                orden_dias = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
+
+                def _ancla_idioma(key, prefijo):
+                    r = db.execute("SELECT * FROM activity_defs WHERE key=?", (key,)).fetchone()
+                    if r is None:   # por si en esta base el ancla tiene otra key
+                        r = db.execute("""SELECT * FROM activity_defs WHERE pillar='cosmo' AND type='ancla'
+                                          AND active=1 AND label LIKE ? ORDER BY sort_order LIMIT 1""",
+                                       (prefijo + "%",)).fetchone()
+                    return r
+
+                partidas = []
+                for key, prefijo, idioma in (("ancla_ingles", "Ingl", "Inglés"), ("ancla_frances", "Franc", "Francés")):
+                    r = _ancla_idioma(key, prefijo)
+                    if r is None or db.execute("SELECT 1 FROM activity_defs WHERE key=?", (r["key"] + "_b",)).fetchone():
+                        continue            # sin ancla, o ya partida
+                    dias = sorted((r["days_of_week"] or "").split(","), key=lambda d: orden_dias.index(d) if d in orden_dias else 9)
+                    dias = [d for d in dias if d in orden_dias]
+                    if len(dias) >= 2:
+                        db.execute("UPDATE activity_defs SET label=?, days_of_week=? WHERE key=?",
+                                   (f"{idioma} · Sesión A (input: escucha + lectura)", dias[0], r["key"]))
+                        db.execute(
+                            """INSERT OR IGNORE INTO activity_defs
+                               (key, label, cat, pts, ec, tier, session, pillar, type, cadence, days_of_week,
+                                active, hidden, custom, sort_order)
+                               VALUES (?,?,?,?,?,?,?,?,?,?,?,1,0,0,?)""",
+                            (r["key"] + "_b", f"{idioma} · Sesión B (output con corrección)", r["cat"], r["pts"], r["ec"],
+                             r["tier"], r["session"], "cosmo", "ancla", r["cadence"] or "daily", ",".join(dias[1:]),
+                             (r["sort_order"] or 0) + 1))
+                    else:   # un solo día: A y B se alternan en la misma ancla
+                        db.execute("UPDATE activity_defs SET label=? WHERE key=?",
+                                   (f"{idioma} · Sesión (alterna input / output)", r["key"]))
+                    partidas.append(f"{r['key']} {','.join(dias) or 'sin días'}")
+
+                en = _ancla_idioma("ancla_ingles", "Ingl")
+                rep_pts, rep_ec = (en["pts"], en["ec"]) if en else (6, 2)
+                db.executemany(
+                    """INSERT OR IGNORE INTO activity_defs
+                       (key, label, cat, pts, ec, tier, session, pillar, type, cadence, days_of_week,
+                        active, hidden, custom, sort_order, one_time)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,1,0,0,?,?)""",
+                    [
+                        ("ancla_repaso_idiomas", "Repaso semanal EN+FR (Anki, errores, reescritura)", "Idiomas",
+                         rep_pts, rep_ec, "alto", "afternoon", "cosmo", "ancla", "daily", "sat", 19, 0),
+                        ("anki_idiomas", "Anki EN+FR · 10 min", "Idiomas", 1, 0, "micro", "any", "cosmo", "touch",
+                         "daily", "wed,sun", 30, 0),
+                        ("lectura_idiomas", "Lectura extensiva EN/FR · 15 min", "Idiomas", 1, 0, "micro", "night", "cosmo",
+                         "touch", "daily", None, 31, 0),
+                    ] + [
+                        (key, "Hito · " + label, "Idiomas", pts, 0, "alto", None, "cosmo", "ocasional", "daily", None, 60 + i, 1)
+                        for i, (key, label, pts) in enumerate([
+                            ("hito_en_monologo",     "Monólogo de 3 min en inglés sin bloquearme", 25),
+                            ("hito_fr_monologo",     "Monologue de 3 min sans blocage", 25),
+                            ("hito_en_conversacion", "30 min de conversación en inglés sin bloquearme", 50),
+                            ("hito_fr_conversacion", "30 min de conversation sans blocage", 50),
+                            ("hito_en_novela",       "Primera novela completa en inglés sin diccionario", 40),
+                            ("hito_fr_novela",       "Primer roman complet sans dictionnaire", 40),
+                            ("hito_en_pelicula",     "Película en inglés sin subtítulos (≤10 % perdido)", 30),
+                            ("hito_fr_pelicula",     "Film sans sous-titres (≤10 % perdu)", 30),
+                            ("hito_en_ensayo",       "Ensayo de 600 palabras con ≤1 error cada 100", 40),
+                            ("hito_fr_concordance",  "Concordance des temps : 3 textes sans erreur", 30),
+                            ("hito_fr_litote",       "Chasseur de litotes : ≥4 figures sur une page", 20),
+                            ("hito_en_anki_100",     "100 días de Anki en inglés", 30),
+                            ("hito_fr_anki_100",     "100 jours d'Anki en français", 30),
+                            ("hito_en_c1",           "C1 funcional · English (checklist completa)", 100),
+                            ("hito_fr_c1",           "C1 fonctionnel · Français (checklist complète)", 100),
+                        ])
+                    ])
+                db.execute("UPDATE activity_defs SET label='Escucha extensiva EN/FR · 20 min (podcast)' WHERE key='podcast_idiomas'")
+                db.execute("UPDATE activity_defs SET active=0 WHERE key='test_cert'")
+
+                if SEMBRAR_DATOS_USUARIO:   # checkpoints = recordatorios con fecha (dato personal)
+                    from datetime import date as _d, timedelta as _td
+                    inicio = _d(2026, 11, 16)   # lunes de la semana 1
+
+                    def _sabado(semana):        # sábado de esa semana (día del repaso)
+                        return (inicio + _td(days=7 * max(semana - 1, 0) + 5)).isoformat()
+
+                    for semana, texto in (
+                        (0,  "Idiomas · línea base EN y FR: checklist C1 completa (docs/idiomas_c1_plan.md)"),
+                        (8,  "Francés · checkpoint fase 1: EO1, CO2, IO1"),
+                        (10, "Inglés · checkpoint fase 1: EO1, CO2, IO1"),
+                        (18, "Francés · checkpoint fase 2: EE1, CE1, EO1"),
+                        (20, "Inglés · checkpoint fase 2: EE1, CE1, EO1"),
+                        (28, "Francés · checkpoint fase 3: CO2, CO3, IO2, CE3"),
+                        (32, "Inglés · checkpoint fase 3: CO2, CO3, IO2, CE3"),
+                        (36, "Francés · checkpoint fase 4: checklist C1 completa"),
+                        (44, "Inglés · checkpoint fase 4: checklist C1 completa"),
+                    ):
+                        f = _sabado(semana)
+                        db.execute(
+                            """INSERT INTO reminders (description, type, target_date, next_date, is_active, created_at, tema)
+                               VALUES (?, 'unico', ?, ?, 1, datetime('now'), 'otros')""", (texto, f, f))
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("idiomas_c1_plan_2026_11",
+                     "Plan C1 EN/FR: anclas A/B (" + "; ".join(partidas) + "), repaso sábado, Anki y lectura "
+                     "opcionales, 15 hitos one_time, test_cert desactivado, checkpoints como recordatorios.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] idiomas_c1_plan_2026_11 migration warning: {e}")
+
         # ── COSMOPOLITISMO v2 (Sprint 1): score guardado de cada entrada del
         # journal (nullable: NULL si LanguageTool no respondió), rondas de
         # repaso ya premiadas (no duplicar XP por ronda) y los dos touches de

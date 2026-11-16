@@ -215,8 +215,17 @@ def index():
                              "done": len(done), "total": len(items),
                              "xp_done": sum(i.get("pts") or 0 for i in done)})
 
+    # Ocasionales (sin horario) y hitos one_time: sección propia, plegada.
+    acta_ocasionales = []
+    for item in ctx["grouped"].get("ocasional", []):
+        item["eury_proxy"] = False          # se marcan a mano, también los de Eurythmia
+        item["done_ui"] = bool(item.get("done"))
+        acta_ocasionales.append(item)
+    acta_ocasionales.sort(key=lambda i: (bool(i.get("one_time")), i.get("sort_order") or 0, i["label"]))
+
     _td = today_date()
     return render_template('actividades/index.html',
+        acta_ocasionales = acta_ocasionales,
         acta_pillars  = acta_pillars,
         acta_anchors  = acta_anchors,
         anchors_need  = gam["classification"].get("diamond_min_anchors", 0),
@@ -294,7 +303,14 @@ def log_activity():
     key   = request.json.get('key')
     today = today_str()
     act = adefs.get_by_key(key)
-    if not act or not act['active'] or act['hidden']:
+    # Un hito de una sola vez (one_time) se desactiva al marcarlo; «Deshacer»
+    # el mismo día lo quita y lo reactiva (antes respondía 'invalid').
+    reactivar = False
+    if act and not act['active'] and act.get('one_time') and not act['hidden']:
+        with get_db() as db:
+            reactivar = db.execute("SELECT 1 FROM activity_logs WHERE activity_key=? AND date=?",
+                                   (key, today)).fetchone() is not None
+    if not act or (not act['active'] and not reactivar) or act['hidden']:
         return jsonify({'error': 'invalid'}), 400
 
     pts = act['pts']
@@ -351,11 +367,13 @@ def log_activity():
 
     if removed_id:
         gam = engine.remove_activity(removed_id)
+        if reactivar:
+            adefs.reactivate(key)
         _t2 = time.perf_counter()
         stats = get_dashboard_stats()
         _t3 = time.perf_counter()
         print(f"[logAct] sqlite={(_t1-_t0)*1000:.1f}ms engine={(_t2-_t1)*1000:.1f}ms stats={(_t3-_t2)*1000:.1f}ms TOTAL={(_t3-_t0)*1000:.1f}ms")
-        return jsonify({'action': 'removed', 'pts': -pts, 'stats': stats, 'gam': gam})
+        return jsonify({'action': 'removed', 'pts': -pts, 'stats': stats, 'gam': gam, 'reactivated': reactivar})
 
     gam = engine.process_activity(key, pts, cat, log_id, ec=ec)
     _t2 = time.perf_counter()
