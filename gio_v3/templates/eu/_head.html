@@ -42,7 +42,7 @@
        del archivo (auditoría F-03): para actualizar, copiar
        dist/umd/lucide.min.js del paquete npm `lucide` con el número nuevo. -->
   <script src="{{ url_for('static', filename='js/vendor/lucide-1.31.0.min.js') }}"></script>
-  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 
   <style>
     /* Tokens → static/css/app.css. Componentes eu-*, shell de navegación,

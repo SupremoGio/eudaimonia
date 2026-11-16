@@ -197,6 +197,34 @@ def create_app():
     # Módulos, breadcrumb y ⌘K salen de una sola fuente.
     from modules.nav import nav_context, page_info
     app.context_processor(nav_context)
+
+    # Versión en la URL de cada estático (?v=<hash del contenido>). Sin esto el
+    # iPhone —sobre todo la app instalada en la pantalla de inicio— podía seguir
+    # usando un app.css viejo después de un deploy (el modo noche «carbón
+    # cálido» no aparecía en móvil). Cambia el archivo → cambia la URL.
+    import hashlib as _hl
+    _ver_cache = {}
+
+    def _static_version(filename):
+        path = os.path.join(app.static_folder, filename)
+        try:
+            mtime = os.path.getmtime(path)
+        except OSError:
+            return None
+        hit = _ver_cache.get(filename)
+        if hit and hit[0] == mtime:
+            return hit[1]
+        with open(path, 'rb') as fh:
+            v = _hl.md5(fh.read()).hexdigest()[:10]
+        _ver_cache[filename] = (mtime, v)
+        return v
+
+    @app.url_defaults
+    def _versionar_estaticos(endpoint, values):
+        if endpoint == 'static' and 'v' not in values and values.get('filename'):
+            v = _static_version(values['filename'])
+            if v:
+                values['v'] = v
     app.jinja_env.globals['nav_page'] = page_info   # para ui.page_head
 
     @app.errorhandler(429)
@@ -210,6 +238,9 @@ def create_app():
             lim = limiter.current_limit
             if lim is not None and lim.reset_at:
                 espera = max(1, math.ceil(lim.reset_at - _t.time()))
+                # limits redondea reset_at hacia arriba (un segundo de más):
+                # nunca más que la ventana del límite rebasado (60 s en 5/min).
+                espera = min(espera, int(lim.limit.get_expiry()))
         except Exception:
             pass
         r = jsonify({'ok': False, 'error': f'Demasiados intentos. Espera {espera} s.',
