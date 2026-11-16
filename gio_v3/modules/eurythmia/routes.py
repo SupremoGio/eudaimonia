@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, redirect
 import re
 import unicodedata
 from collections import Counter
@@ -300,7 +300,23 @@ def _state():
 
 @eurythmia_bp.route('/')
 def index():
-    vista = request.args.get('vista') if request.args.get('vista') in ('bitacora', 'musica', 'progreso') else ''
+    # Música es subpágina propia (/eurythmia/musica/, en el menú bajo Eurythmia);
+    # el enlace viejo ?vista=musica sigue funcionando.
+    if request.args.get('vista') == 'musica':
+        from urllib.parse import urlencode
+        resto = [(k, v) for k, v in request.args.items(multi=True) if k != 'vista']
+        return redirect('/eurythmia/musica/' + ('?' + urlencode(resto) if resto else ''))
+    vista = request.args.get('vista') if request.args.get('vista') in ('bitacora', 'progreso') else ''
+    return _render(vista)
+
+
+@eurythmia_bp.route('/musica/')
+def musica_page():
+    """Los 100 álbumes: subpágina de Eurythmia (antes ?vista=musica)."""
+    return _render('musica')
+
+
+def _render(vista):
     musica = _musica_state()
     siguiente = next((a for a in musica['albumes'] if not a['escuchado']), None)
     return render_template(
