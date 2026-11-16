@@ -182,3 +182,52 @@ def test_volver_a_acta(client):
     for f in ('templates/actividades/_item.html', 'templates/actividades/_anchors.html'):
         t = open(os.path.join(BASE, f), encoding='utf-8').read()
         assert '/eurythmia/?from=acta' in t and 'href="/eurythmia/"' not in t
+
+
+# ── Música: calificar al escuchar (bug 2026-11-16) ──────────────────────────
+def _album_id(n=1):
+    with database.get_db() as db:
+        return db.execute("SELECT id FROM eury_albums ORDER BY rank LIMIT 1 OFFSET ?", (n - 1,)).fetchone()['id']
+
+
+def test_rating_solo_con_los_4_criterios(client):
+    aid = _album_id(3)
+    client.post(f'/eurythmia/api/album/{aid}', json={'escuchado': True})
+    r = client.post(f'/eurythmia/api/album/{aid}', json={'rating_sonido': 10}).get_json()
+    a = next(x for x in r['musica']['albumes'] if x['id'] == aid)
+    assert a['mi_rating'] is None and r['musica']['ranking'] == []          # un solo 10 ya no es 10/10
+    r = client.post(f'/eurythmia/api/album/{aid}', json={'rating_letras': 7, 'rating_consistencia': 8, 'rating_replay': 4}).get_json()
+    a = next(x for x in r['musica']['albumes'] if x['id'] == aid)
+    assert a['mi_rating'] == 7.3                                             # (10+7+8+4)/4 = 7.25 → 7.3
+    assert [x['id'] for x in r['musica']['ranking']] == [aid]
+
+
+def test_migracion_recalcula_ratings_incompletos(test_db):
+    a, b = _album_id(1), _album_id(2)
+    with database.get_db() as db:
+        db.execute("UPDATE eury_albums SET escuchado=1, rating_sonido=10, mi_rating=10 WHERE id=?", (a,))
+        db.execute("UPDATE eury_albums SET escuchado=1, rating_sonido=9, rating_letras=8, rating_consistencia=8, "
+                   "rating_replay=6, mi_rating=0 WHERE id=?", (b,))
+        db.execute("DELETE FROM migration_log WHERE version='eury_albums_rating_completo'")
+        db.commit()
+    database.init_db()
+    with database.get_db() as db:
+        got = {r['id']: r['mi_rating'] for r in db.execute("SELECT id, mi_rating FROM eury_albums WHERE id IN (?,?)", (a, b))}
+        sonido = db.execute("SELECT rating_sonido FROM eury_albums WHERE id=?", (a,)).fetchone()[0]
+    assert got == {a: None, b: 7.8} and sonido == 10                        # el criterio calificado se conserva
+
+
+def test_xp_de_albumes_cuenta_para_eurythmia():
+    import modules.gamification.engine as engine
+    assert engine.pillar_of('eury_album_12') == 'eury'
+    assert engine.pillar_of('eurythmia_grabado') == 'eury' and engine.pillar_of('eurythmia_streak_7') == 'eury'
+    assert engine.pillar_of(category='Música') == 'eury'
+
+
+def test_js_califica_al_marcar_sin_esconder_el_album():
+    js = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'static', 'js', 'eurythmia.js'),
+              encoding='utf-8').read()
+    assert "!a.escuchado || recien[a.id]" in js                  # en «Pendientes» se queda al marcarlo
+    assert "querySelector('#mu-panel-' + id + ' .ey-dot')" in js  # foco al primer criterio
+    assert 'Se borran sus calificaciones' in js                   # desmarcar pide confirmación
+    assert "recien = {};" in js                                   # al cambiar de filtro, se limpia

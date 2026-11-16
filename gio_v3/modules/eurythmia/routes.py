@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify, redirect
+import math
 import re
 import unicodedata
 from collections import Counter
@@ -104,10 +105,13 @@ RATING_DIMS = [
 
 
 def _compute_mi_rating(row):
-    vals = [row[f"rating_{d['key']}"] for d in RATING_DIMS if row[f"rating_{d['key']}"] is not None]
-    if not vals:
+    """Promedio de los 4 criterios, solo con los 4 calificados. Antes bastaba
+    uno: un álbum con un solo 10 salía 10/10 y encabezaba «Mi ranking» por
+    encima de álbumes calificados completos."""
+    vals = [row[f"rating_{d['key']}"] for d in RATING_DIMS]
+    if any(v is None for v in vals):
         return None
-    return round(sum(vals) / len(vals), 1)
+    return math.floor(sum(vals) / len(vals) * 10 + 0.5) / 10    # 7.25 → 7.3 (round() daría 7.2)
 
 
 def _musica_state():

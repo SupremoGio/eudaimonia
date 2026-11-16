@@ -281,10 +281,14 @@
 
   if (VISTA === 'musica') {
   /* ── Música ─────────────────────────────────────────────────────────── */
-  var muFilter = 'todos', openRate = null;
+  // recien: álbumes marcados como escuchados en este filtro. Se quedan en la
+  // lista (también en «Pendientes») para calificarlos ahí mismo; antes
+  // desaparecían al marcarlos y el panel de calificación se abría oculto.
+  var muFilter = 'todos', openRate = null, recien = {};
   function score(v) { return v != null ? Number(v).toFixed(1) : '—'; }
+  function faltan(a) { return DIMS.filter(function (d) { return a['rating_' + d.key] == null; }).length; }
   function muItems() {
-    if (muFilter === 'pendientes') return MUSICA.albumes.filter(function (a) { return !a.escuchado; });
+    if (muFilter === 'pendientes') return MUSICA.albumes.filter(function (a) { return !a.escuchado || recien[a.id]; });
     if (muFilter === 'escuchados') return MUSICA.albumes.filter(function (a) { return a.escuchado; });
     if (muFilter === 'ranking') return MUSICA.ranking;
     return MUSICA.albumes;
@@ -296,7 +300,9 @@
         dots += '<button type="button" class="ey-dot' + (val != null && i <= val ? ' is-on' : '') + '" data-dim="' + d.key + '" data-val="' + i + '" aria-label="' + esc(d.label) + ': ' + i + '" aria-pressed="' + (val === i) + '"></button>';
       }
       return '<div class="ey-dim"><div class="eu-between"><span class="t-meta">' + esc(d.label) + '</span><span class="t-data fg-brand">' + (val == null ? '—' : val) + '</span></div><div class="ey-dots" role="group" aria-label="' + esc(d.label) + '">' + dots + '</div></div>';
-    }).join('') + '<div class="t-meta ey-overall">Tu rating · <b class="t-data fg-brand">' + score(a.mi_rating) + '</b>/10</div>';
+    }).join('') + '<div class="t-meta ey-overall" aria-live="polite">' + (faltan(a)
+      ? 'Califica ' + (faltan(a) === DIMS.length ? 'los ' + DIMS.length + ' criterios' : (faltan(a) === 1 ? 'el criterio que falta' : 'los ' + faltan(a) + ' que faltan')) + ' para tu rating (1–10 cada uno)'
+      : 'Tu rating · <b class="t-data fg-brand">' + score(a.mi_rating) + '</b>/10') + '</div>';
   }
   function renderMusica() {
     var box = $('mu-list'), items = muItems();
@@ -310,7 +316,7 @@
     }
     if (!items.length) { box.innerHTML = emptyHtml('disc-3', 'Nada en este filtro', 'No hay álbumes en esta vista.'); icons(); return; }
     box.innerHTML = '<ol class="eu-card eu-card--flush eu-list mu-list">' + items.map(function (a) {
-      var open = openRate === a.id && a.escuchado;
+      var open = openRate === a.id && !!a.escuchado;   // escuchado llega como 0/1: aria-expanded necesita true/false
       return '<li class="mu-item' + (a.escuchado ? ' is-done' : '') + '" id="mu-row-' + a.id + '"><div class="eu-row mu-row">' +
         '<span class="mu-rank t-data">' + a.rank + '</span>' +
         '<button type="button" class="mu-check" data-act="toggle" data-id="' + a.id + '" aria-pressed="' + !!a.escuchado + '" aria-label="' + (a.escuchado ? 'Marcar como pendiente' : 'Marcar como escuchado') + ': ' + esc(a.album) + '"><i data-lucide="check"></i></button>' +
@@ -327,19 +333,34 @@
     $('mu-f-todos').querySelector('.ct').textContent = MUSICA.total;
     $('mu-f-pendientes').querySelector('.ct').textContent = MUSICA.total - MUSICA.escuchados_n;
     $('mu-f-escuchados').querySelector('.ct').textContent = MUSICA.escuchados_n;
+    // El antetítulo y la tarjeta lateral también (antes solo al recargar)
+    var eb = document.querySelector('.ey-hd .t-eyebrow');
+    if (eb) eb.textContent = MUSICA.escuchados_n + ' de ' + MUSICA.total + ' álbumes escuchados';
+    if ($('ey-mus-n')) $('ey-mus-n').textContent = MUSICA.escuchados_n + '/' + MUSICA.total;
   }
   function muToggle(id) {
     var a = MUSICA.albumes.filter(function (x) { return x.id === id; })[0]; if (!a) return;
     var now = !a.escuchado;
-    post('/eurythmia/api/album/' + id, { escuchado: now }).then(function (d) {
-      if (!d._ok || !d.ok) { toast('Error al guardar', 'err'); return; }
-      MUSICA = d.musica;
-      if (d.gam && d.gam.xp) toast('+' + d.gam.xp + ' XP', 'win');
-      openRate = now ? id : (openRate === id ? null : openRate);
-      syncMusica(); renderMusica();
-      var nb = document.querySelector('[data-act="toggle"][data-id="' + id + '"]'); if (nb) nb.focus();
-      if (d.gam && window.euGam) euGam(d.gam, { el: nb });
-    }).catch(function () { toast('Sin conexión', 'err'); });
+    // Desmarcar borra las calificaciones: si ya tenía alguna, se confirma.
+    var calificado = !now && faltan(a) < DIMS.length;
+    var ok = calificado ? euConfirm('¿Marcar «' + a.album + '» como pendiente? Se borran sus calificaciones.', { confirmLabel: 'Marcar pendiente' }) : Promise.resolve(true);
+    ok.then(function (si) {
+      if (!si) return;
+      post('/eurythmia/api/album/' + id, { escuchado: now }).then(function (d) {
+        if (!d._ok || !d.ok) { toast('Error al guardar', 'err'); return; }
+        MUSICA = d.musica;
+        if (now) recien[id] = true; else recien[id] = false;
+        openRate = now ? id : (openRate === id ? null : openRate);
+        syncMusica(); renderMusica();
+        var nb = document.querySelector('[data-act="toggle"][data-id="' + id + '"]');
+        // Recién escuchado: el foco va al primer criterio para calificarlo ahí mismo
+        var first = now && document.querySelector('#mu-panel-' + id + ' .ey-dot');
+        (first || nb || document.body).focus();
+        if (first) document.getElementById('mu-row-' + id).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        if (d.gam && window.euGam) euGam(d.gam, { el: nb });
+        else if (d.gam && d.gam.xp) toast('+' + d.gam.xp + ' XP', 'win');
+      }).catch(function () { toast('Sin conexión', 'err'); });
+    });
   }
   function muRateToggle(id) {
     openRate = openRate === id ? null : id;
@@ -352,7 +373,9 @@
       if (!d._ok || !d.ok) { toast('Error al guardar', 'err'); return; }
       MUSICA = d.musica;
       var a = MUSICA.albumes.filter(function (x) { return x.id === id; })[0]; if (!a) return;
+      var antes = $('mu-score-' + id).textContent;
       $('mu-panel-' + id).innerHTML = ratePanel(a);
+      if (a.mi_rating != null && antes === '—') toast('Tu rating de «' + a.album + '»: ' + score(a.mi_rating) + '/10', 'ok');
       $('mu-score-' + id).textContent = score(a.mi_rating);
       document.querySelector('[data-act="rate"][data-id="' + id + '"]').classList.toggle('is-rated', a.mi_rating != null);
       var dot = document.querySelector('#mu-panel-' + id + ' [data-dim="' + dim + '"][data-val="' + val + '"]'); if (dot) dot.focus();
@@ -366,7 +389,7 @@
   });
   $$('[data-mf]').forEach(function (c) {
     c.addEventListener('click', function () {
-      muFilter = c.dataset.mf;
+      muFilter = c.dataset.mf; recien = {};
       $$('[data-mf]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === c)); });
       renderMusica();
     });
