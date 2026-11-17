@@ -49,29 +49,52 @@
     }).catch(function () { toast('Sin conexión', 'err'); });
   });
 
-  /* ── Vista ?vista=plan: chips de checkpoints + reiniciar ── */
+  /* ── Vista ?vista=plan: fases con checkpoint y temario de 30 semanas ── */
   if (root.dataset.vista === 'plan') {
-    var cargarPlan = function () {
-      getJ(API + '/plan').then(function (d) {
-        $('plan-inicio').textContent = 'Inicio del plan: ' + d.inicio + ' · semana ' + d.semana_actual + ' de ' + d.total_semanas + ' · hecho ' + d.hecho_pct + '%';
-        $('plan-cps').innerHTML = d.checkpoints.map(function (cp) {
-          return '<button type="button" class="id-cp' + (cp.vencido && !cp.completado ? ' is-late' : '') + '" data-cp="' + cp.id + '" data-to="' + (cp.completado ? 0 : 1) + '" aria-pressed="' + !!cp.completado + '">' +
-            '<span class="eu-between"><span class="t-eyebrow">' + (cp.completado ? 'Completada' : 'Fase ' + cp.fase) + '</span><span class="eu-act-check"><i data-lucide="check"></i></span></span>' +
-            '<span class="t-ui">' + esc(cp.nombre) + '</span><span class="t-meta">Hasta semana ' + cp.semana_fin + ' · ' + esc(cp.fecha_objetivo) + '</span><span class="t-meta id-crit">' + esc(cp.criterio) + '</span></button>';
-        }).join('');
-        icons();
-      });
-    };
-    $('plan-cps').addEventListener('click', function (e) {
-      var b = e.target.closest('[data-cp]'); if (!b) return;
-      jpost(API + '/plan/checkpoint/' + b.dataset.cp, { completado: b.dataset.to === '1' }).then(cargarPlan);
-    });
-    document.querySelector('.js-reiniciar').addEventListener('click', function () {
-      euConfirm('¿Reiniciar el plan desde hoy? Los checkpoints vuelven a pendientes.', { confirmLabel: 'Reiniciar' }).then(function (ok) {
-        if (ok) jpost(API + '/plan/reiniciar', {}).then(function () { toast('Plan reiniciado'); cargarPlan(); });
+    $$('.js-cp').forEach(function (b) {
+      b.addEventListener('click', function () {
+        b.setAttribute('aria-busy', 'true');
+        jpost(API + '/plan/checkpoint/' + b.dataset.cp, { completado: b.dataset.to === '1' })
+          .then(function () { location.reload(); })
+          .catch(function () { b.removeAttribute('aria-busy'); toast('Sin conexión', 'err'); });
       });
     });
-    cargarPlan();
+    // Pestañas del temario (English / Français)
+    var tabs = $$('#tm-lang [data-tm]');
+    function verTemario(lang) {
+      tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.tm === lang)); });
+      $$('[data-tm-panel]').forEach(function (p) { p.hidden = p.dataset.tmPanel !== lang; });
+    }
+    tabs.forEach(function (t) { t.addEventListener('click', function () { verTemario(t.dataset.tm); }); });
+    // Material de la semana: se edita en la misma fila (vacío = vuelve al sugerido)
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('.js-mat-edit'); if (!btn) return;
+      var li = btn.closest('.id-tm'), dd = btn.closest('.id-tm-mat'), txt = dd.querySelector('.js-mat-txt');
+      if (dd.querySelector('.id-tm-form')) return;
+      var f = document.createElement('form'); f.className = 'id-tm-form';
+      f.innerHTML = '<input class="eu-input" maxlength="300" aria-label="Material de la semana ' + li.dataset.sem + '">' +
+        '<button type="submit" class="eu-btn eu-btn--primary eu-btn--sm">Guardar</button>' +
+        '<button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-mat-x">Cancelar</button>';
+      var inp = f.querySelector('input'); inp.value = txt.textContent; inp.placeholder = btn.dataset.sugerido;
+      txt.hidden = true; btn.hidden = true; dd.appendChild(f); inp.focus(); inp.select();
+      function cerrar() { f.remove(); txt.hidden = false; btn.hidden = false; btn.focus(); }
+      f.querySelector('.js-mat-x').addEventListener('click', cerrar);
+      inp.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); cerrar(); } });
+      f.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        jpost(API + '/temario/material', { lang: li.dataset.lang, semana: +li.dataset.sem, material: inp.value })
+          .then(function (d) {
+            if (!d.ok) { toast(d.error || 'No se pudo guardar', 'err'); return; }
+            txt.textContent = d.semana.material;
+            var dt = dd.parentNode.querySelector('dt'); if (dt) dt.textContent = d.semana.material_propio ? 'Material (tuyo)' : 'Material';
+            toast(d.semana.material_propio ? 'Material guardado' : 'Vuelve el material sugerido', 'ok');
+            cerrar();
+          }).catch(function () { toast('Sin conexión', 'err'); });
+      });
+    });
+    // Al abrir, la semana actual a la vista
+    var now = document.querySelector('[data-tm-panel]:not([hidden]) .id-tm.is-now');
+    if (now && !location.hash) now.scrollIntoView({ block: 'center' });
     return;
   }
   if (root.dataset.vista) return;

@@ -119,16 +119,20 @@ def test_revisar_con_languagetool_caido_guarda_score_null(client, lt_caido):
     assert client.post('/idiomas/api/language/feedback', json={'text': 'x'}).status_code == 503
 
 
-def test_plan_hecho_atraso_y_siguiente(client):
+def test_plan_hecho_atraso_y_siguiente(client, monkeypatch):
+    # Plan v2 (temario): 3 fases de 10 semanas desde el lunes 2026-11-16
+    from datetime import date
+    monkeypatch.setattr(ir, 'today_date', lambda: date(2026, 11, 17))     # semana 1
     p = client.get('/idiomas/api/plan').get_json()
+    assert (p['semana_actual'], p['total_semanas'], p['fase_actual']) == (1, 30, 1)
     assert p['hecho_pct'] == 0 and p['atraso_pts'] == p['progreso_pct']
-    assert p['siguiente_cp']['semana_fin'] == 6 and p['siguiente_cp']['semanas_restantes'] == 5
+    assert p['siguiente_cp']['semana_fin'] == 10 and p['siguiente_cp']['semanas_restantes'] == 9
     with database.get_db() as db:
         db.execute("UPDATE lang_plan_checkpoints SET completado=1 WHERE fase IN (1,2)")
         db.commit()
     p = client.get('/idiomas/api/plan').get_json()
-    assert p['hecho_pct'] == 50 and p['atraso_pts'] == 0                # adelantado
-    assert p['siguiente_cp']['titulo'] == 'Producción y automatización'
+    assert p['hecho_pct'] == 67 and p['atraso_pts'] == 0                # adelantado
+    assert p['siguiente_cp']['titulo'] == 'Precisión y registro'
 
 
 def test_due_y_palabra_al_repaso(client):
@@ -159,10 +163,16 @@ def test_quiz_etiquetas(client):
     assert q['vencidas'] == 5 and all(t == 'vencida · fallaste hace 3 d' for t in tags.values())
 
 
-def test_prompt_por_fase(client):
+def test_prompt_por_fase(client, monkeypatch):
+    # Dentro del plan, el prompt es el writing de la semana del temario;
+    # fuera de él, la lista de prompts por fase de antes.
+    from modules.idiomas import temario as tm
+    monkeypatch.setattr(tm, 'semana_de', lambda d=None: 12)
     p = client.get('/idiomas/api/journal/prompt?lang=fr&fase=2').get_json()
-    assert p['fase'] == 2 and p['prompt'] in ir._PROMPTS['fr'][2]
-    assert client.get('/idiomas/api/journal/prompt?lang=en').get_json()['fase'] == 1
+    assert p['fase'] == 2 and p['prompt'] == tm.TEMARIO['fr'][11]['writing']
+    monkeypatch.setattr(tm, 'semana_de', lambda d=None: 31)
+    p = client.get('/idiomas/api/journal/prompt?lang=fr&fase=2').get_json()
+    assert p['prompt'] in ir._PROMPTS['fr'][2]
 
 
 def test_migracion_idempotente(test_db):
@@ -229,7 +239,8 @@ def test_pagina_principal(client):
 def test_vistas(client, lt_ok):
     client.post('/idiomas/api/journal/revisar', json={'text': 'Remote work has became common.', 'lang': 'en'})
     client.post('/idiomas/api/test', json={'test_type': 'IELTS', 'idioma': 'English', 'destreza': 'Writing', 'score': '6.5'})
-    assert 'id="plan-cps"' in client.get('/idiomas/?vista=plan').get_data(as_text=True)
+    plan = client.get('/idiomas/?vista=plan').get_data(as_text=True)
+    assert 'class="id-fases"' in plan and 'Temario semana a semana' in plan
     t = client.get('/idiomas/?vista=tests').get_data(as_text=True)
     assert 'js-del-test' in t and '6.5' in t and 'id="id-lang"' not in t
     j = client.get('/idiomas/?vista=journal').get_data(as_text=True)

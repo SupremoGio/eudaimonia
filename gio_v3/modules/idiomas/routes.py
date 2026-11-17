@@ -16,7 +16,8 @@ _LANG_MAP = {
 }
 
 _PLAN_START_KEY = 'idiomas_plan_inicio'
-_PLAN_TOTAL_SEMANAS = 26
+from modules.idiomas import temario as tm
+_PLAN_TOTAL_SEMANAS = tm.SEMANAS   # plan v2: 3 fases de 10 semanas (antes 26)
 
 # Un solo selector de idioma para toda la página: 'en' | 'fr'
 _LANG_NOMBRE = {'en': 'English', 'fr': 'Français'}
@@ -74,15 +75,54 @@ def _lang():
     return l if l in _LANG_NOMBRE else 'en'
 
 
+def _prompt_de(lang, fase):
+    """Prompt del journal: el writing de la semana del temario (EN/FR); fuera
+    del plan o en otros idiomas, la lista de prompts por fase de antes."""
+    n = tm.semana_de()
+    if lang in tm.TEMARIO and 1 <= n <= tm.SEMANAS:
+        return tm.TEMARIO[lang][n - 1]['writing']
+    lista = _PROMPTS.get(lang, _PROMPTS['en']).get(fase) or _PROMPTS.get(lang, _PROMPTS['en'])[1]
+    return lista[today_date().toordinal() % len(lista)]
+
+
 @idiomas_bp.route('/')
 def index():
     vista = request.args.get('vista', '')
     with get_db() as db:
         tests   = db.execute("SELECT * FROM lang_test_results ORDER BY test_date DESC, id DESC").fetchall()
         journal = db.execute("SELECT * FROM lang_journal ORDER BY entry_date DESC, id DESC LIMIT 200").fetchall()
+        ovr = tm.overrides(db)
+    n = tm.semana_de()
+    temario = {lang: [tm.semana(lang, s, ovr) for s in range(1, tm.SEMANAS + 1)] for lang in tm.TEMARIO}
     return render_template('idiomas/index.html',
         vista=vista if vista in ('plan', 'tests', 'journal') else '',
-        tests=tests, journal=[_entrada(r) for r in journal], today=today_str(), plan=_plan_estado())
+        tests=tests, journal=[_entrada(r) for r in journal], today=today_str(), plan=_plan_estado(),
+        hoy=tm.hoy(None, ovr), temario=temario, fases=tm.FASES, pruebas=tm.PRUEBAS, semana_actual=n,
+        fecha_semana=lambda s: tm.fecha_de(s).isoformat())
+
+
+@idiomas_bp.route('/api/temario/material', methods=['POST'])
+def temario_material():
+    """Cambia el material de una semana (vacío = vuelve al sugerido)."""
+    d = request.get_json(silent=True) or {}
+    lang, texto = d.get('lang'), (d.get('material') or '').strip()[:300]
+    try:
+        n = int(d.get('semana'))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'semana inválida'}), 400
+    if lang not in tm.TEMARIO or not 1 <= n <= tm.SEMANAS:
+        return jsonify({'error': 'semana o idioma inválido'}), 400
+    with get_db() as db:
+        if texto:
+            db.execute("""INSERT INTO lang_temario_material (lang, semana, material, updated_at)
+                          VALUES (?,?,?,datetime('now'))
+                          ON CONFLICT(lang, semana) DO UPDATE SET material=excluded.material,
+                          updated_at=excluded.updated_at""", (lang, n, texto))
+        else:
+            db.execute("DELETE FROM lang_temario_material WHERE lang=? AND semana=?", (lang, n))
+        db.commit()
+        e = tm.semana(lang, n, tm.overrides(db))
+    return jsonify({'ok': True, 'semana': e})
 
 
 # ── Tests ──────────────────────────────────────────────────────────────────────
@@ -273,8 +313,7 @@ def journal_prompt():
         fase = int(request.args.get('fase') or 0) or _plan_estado()['fase_actual']
     except ValueError:
         fase = _plan_estado()['fase_actual']
-    lista = _PROMPTS[lang].get(fase) or _PROMPTS[lang][1]
-    return jsonify({'fase': fase, 'prompt': lista[today_date().toordinal() % len(lista)]})
+    return jsonify({'fase': fase, 'prompt': _prompt_de(lang, fase)})
 
 
 # ── Quiz C1 — con repetición espaciada (SM-2 simplificado) ────────────────────
@@ -567,10 +606,9 @@ def toggle_checkpoint(cid):
 
 @idiomas_bp.route('/api/plan/reiniciar', methods=['POST'])
 def reiniciar_plan():
-    d = request.json or {}
-    nueva_fecha = d.get('inicio') or today_str()
+    # El plan v2 tiene fechas fijas (modules/idiomas/temario.py): reiniciar ya
+    # no mueve el inicio, solo desmarca los checkpoints.
     with get_db() as db:
-        db.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)", (_PLAN_START_KEY, nueva_fecha))
         db.execute("UPDATE lang_plan_checkpoints SET completado=0, completado_at=NULL")
         db.commit()
     return jsonify({'ok': True})
@@ -639,13 +677,12 @@ def tests_destrezas():
 def estado():
     lang = _lang()
     plan = _plan_estado()
-    lista = _PROMPTS[lang].get(plan['fase_actual']) or _PROMPTS[lang][1]
     with get_db() as db:
         return jsonify({
             'lang': lang, 'plan': plan,
             'vencidas': len(_vencidas(db, lang)),
             'palabra': palabra_del_dia(lang, db),
-            'prompt': lista[today_date().toordinal() % len(lista)],
+            'prompt': _prompt_de(lang, plan['fase_actual']),
             'tests': ultimo_por_destreza(db, lang),
             'journal': _journal_estado(db, lang),
             'acta': touches_hoy('cosmo'),

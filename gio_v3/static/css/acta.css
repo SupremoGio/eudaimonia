@@ -247,3 +247,5 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 .acta-anchor-dur{margin-top:-4px}
 .acta-hoy,.acta-extras{grid-column:1/-1}
 @media (min-width:768px){.acta-extras-bd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-4);align-items:start}}
+.acta-anchor-plan{display:block;color:var(--fg-2);text-decoration:none;line-height:1.35}
+.acta-anchor-plan:hover{color:var(--fg-brand);text-decoration:underline}

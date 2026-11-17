@@ -19,12 +19,7 @@
 {% if vista %}
   <a class="eu-btn eu-btn--ghost eu-btn--sm id-back" href="/idiomas/"><i data-lucide="arrow-left"></i>Cosmopolitismo</a>
   {% if vista == 'plan' %}
-  <section class="eu-card eu-vstack id-box" aria-labelledby="vp-t">
-    <div class="eu-between id-box-hd"><h2 class="t-section" id="vp-t">Plan C1 · checkpoints</h2>
-      <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-reiniciar"><i data-lucide="rotate-ccw"></i>Reiniciar plan</button></div>
-    <p class="t-meta" id="plan-inicio"></p>
-    <div class="id-cps" id="plan-cps" aria-label="Checkpoints del plan">{{ ui.skel(4, 96) }}</div>
-  </section>
+  {% include "idiomas/_plan.html" %}
   {% elif vista == 'tests' %}
   <section class="eu-card eu-card--flush id-box" aria-labelledby="vt-t">
     <div class="eu-between id-box-hd id-pad"><h2 class="t-section" id="vt-t">Tests · todos los resultados</h2>
@@ -50,6 +45,7 @@
   {% endif %}
 
 {% else %}
+  {% include "idiomas/_hoy.html" %}
   {% if setup %}
   {{ ui.empty('languages', 'Arranca tu plan C1', 'El plan son 3 fases con checkpoints semanales. Con tus entradas del journal y tus tests mido si vas adelante o atrás del calendario y qué destreza flojea.',
               kind='setup', eyebrow='Cosmopolitismo · primer uso', steps=['Escribe tu primera entrada del journal', 'Registra un test de nivel (aunque sea de práctica)', 'Marca los checkpoints que ya cumples'],

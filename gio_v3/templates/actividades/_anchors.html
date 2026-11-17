@@ -21,6 +21,7 @@
         <span class="acta-anchor-xp num">{% if item.eury_proxy and not item.pts %}XP de la sesión{% else %}+{{ item.pts }} XP{% if item.ec %} · +{{ item.ec }} EC{% endif %}{% endif %}</span></div>
       <div class="acta-anchor-t acta-lbl">{{ item.label }}</div>
       {% if item.duracion_min %}<div class="t-meta acta-anchor-dur num">{{ item.duracion_min }} min</div>{% endif %}
+      {% if item.plan_hoy %}<a class="t-meta acta-anchor-plan" href="/idiomas/#hoy">{{ item.plan_hoy }} →</a>{% endif %}
       {% if item.eury_proxy %}
       <a class="eu-btn acta-anchor-btn{% if item.done_ui %} is-done{% endif %}" href="/eurythmia/?from=acta"><i data-lucide="{{ 'check' if item.done_ui else 'arrow-up-right' }}"></i>{{ 'Hecha · ver detalle' if item.done_ui else 'Registrar en Eurythmia' }}</a>
       {% else %}

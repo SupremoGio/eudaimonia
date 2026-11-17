@@ -1,0 +1,56 @@
+{# Plan C1 v2: las 3 fases con su checkpoint (se marca al aprobar el
+   autodiagnóstico) y el temario de 30 semanas por idioma. Foco, conversación
+   y writing son fijos; el material es sugerido y se puede cambiar. #}
+<section class="eu-card eu-vstack id-box" aria-labelledby="vp-t">
+  <div class="eu-between id-box-hd"><h2 class="t-section" id="vp-t">Plan C1 · 3 fases de 10 semanas</h2>
+    <span class="t-meta num">Semana {{ semana_actual if 1 <= semana_actual <= 30 else '—' }} de 30 · inicio 16 nov 2026</span></div>
+  <div class="id-fases">
+    {% for f in fases %}
+    {% set cp = plan.checkpoints|selectattr('fase', 'equalto', f.fase)|first %}
+    <article class="id-fase{% if plan.fase_actual == f.fase %} is-now{% endif %}">
+      <div class="eu-between"><span class="t-eyebrow">Fase {{ f.fase }} · semanas {{ f.semanas[0] }}–{{ f.semanas[1] }}</span>
+        {% if plan.fase_actual == f.fase %}<span class="eu-badge eu-badge--brand">Ahora</span>{% endif %}</div>
+      <h3 class="t-card">{{ f.nombre }}</h3>
+      <p class="t-meta"><b lang="en">EN</b> · {{ f.foco_en }}</p>
+      <p class="t-meta"><b lang="fr">FR</b> · {{ f.foco_fr }}</p>
+      {% if cp %}
+      <button type="button" class="eu-btn eu-btn--sm {{ 'eu-btn--secondary' if cp.completado else 'eu-btn--ghost' }} js-cp" data-cp="{{ cp.id }}" data-to="{{ 0 if cp.completado else 1 }}" aria-pressed="{{ 'true' if cp.completado else 'false' }}">
+        <i data-lucide="{{ 'circle-check' if cp.completado else 'circle' }}"></i>Checkpoint · sáb {{ f.checkpoint.strftime('%d/%m/%Y') }}{{ ' · aprobado' if cp.completado }}</button>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+  <details class="id-pruebas">
+    <summary class="t-ui">Pruebas del autodiagnóstico (cada checkpoint, EN y FR)</summary>
+    <ul>{% for p, crit in pruebas %}<li><b>{{ p }}</b> · {{ crit }}</li>{% endfor %}</ul>
+  </details>
+</section>
+
+<section class="eu-card eu-vstack id-box" aria-labelledby="vt2-t">
+  <div class="eu-between id-box-hd"><h2 class="t-section" id="vt2-t">Temario semana a semana</h2>
+    <div class="eu-seg" role="tablist" aria-label="Idioma del temario" id="tm-lang">
+      <button type="button" role="tab" data-tm="en" aria-selected="true">English</button>
+      <button type="button" role="tab" data-tm="fr" aria-selected="false">Français</button>
+    </div></div>
+  <p class="t-meta">Foco, conversación y writing son fijos. El material es una sugerencia: cámbialo por el tuyo con el lápiz (vacío = vuelve al sugerido).</p>
+  {% for lang, semanas in temario.items() %}
+  <ol class="id-temario" data-tm-panel="{{ lang }}"{% if lang != 'en' %} hidden{% endif %}>
+    {% for e in semanas %}
+    {% set f = fases|selectattr('fase', 'equalto', (1 if e.semana <= 10 else (2 if e.semana <= 20 else 3)))|first %}
+    {% if e.semana in (1, 11, 21) %}<li class="id-tm-fase t-eyebrow">Fase {{ f.fase }} · {{ f.nombre }}</li>{% endif %}
+    <li class="id-tm{% if e.semana == semana_actual %} is-now{% endif %}" id="{{ 'sem-' ~ e.semana if lang == 'en' else 'sem-fr-' ~ e.semana }}" data-lang="{{ lang }}" data-sem="{{ e.semana }}">
+      <div class="id-tm-hd"><span class="num t-meta">S{{ e.semana }} · {{ fecha_semana(e.semana) }}</span><span class="t-ui">{{ e.tema }}</span>
+        {% if e.semana == semana_actual %}<span class="eu-badge eu-badge--brand">Esta semana</span>{% endif %}</div>
+      <dl class="id-tm-bd">
+        <div><dt>Foco</dt><dd>{{ e.foco }}</dd></div>
+        <div><dt>Material{% if e.material_propio %} (tuyo){% endif %}</dt>
+          <dd class="id-tm-mat"><span class="js-mat-txt">{{ e.material }}</span>
+            <button type="button" class="eu-iconbtn js-mat-edit" aria-label="Cambiar el material de la semana {{ e.semana }}" data-sugerido="{{ e.material_sugerido }}"><i data-lucide="pencil"></i></button></dd></div>
+        <div><dt>Conversación</dt><dd lang="{{ lang }}">{{ e.conversacion }}</dd></div>
+        <div><dt>Writing</dt><dd lang="{{ lang }}">{{ e.writing }}</dd></div>
+      </dl>
+    </li>
+    {% endfor %}
+  </ol>
+  {% endfor %}
+</section>

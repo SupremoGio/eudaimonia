@@ -133,3 +133,47 @@
 .id-cp.is-late{border-color:var(--warning-border)}
 .id-cp.is-late .t-eyebrow{color:var(--warning-fg)}
 .id-crit{line-height:1.45}
+
+/* ── Temario del plan C1 v2: «Hoy toca», fases y semana a semana ── */
+.id-hoy{display:flex;flex-direction:column;gap:var(--sp-3);border-top:3px solid var(--cat-fg)}
+.id-hoy-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-3)}
+.id-hoy-hd .t-section{margin:4px 0 0}
+.id-hoy-ligera{display:flex;align-items:center;gap:6px;margin:0}
+.id-hoy-ligera svg{width:14px;height:14px}
+.id-hoy-sem{display:grid;gap:var(--sp-2);margin:0;padding:var(--sp-3);border-radius:var(--r-md);background:var(--bg-sunken)}
+.id-hoy-sem div{display:grid;grid-template-columns:150px minmax(0,1fr);gap:var(--sp-3)}
+.id-hoy-sem dd{margin:0;color:var(--fg-1)}
+.id-hoy-bloques,.id-hoy-pruebas{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.id-hoy-bloques li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:var(--sp-2);font-size:var(--fs-13)}
+.id-hoy-bloques .num{color:var(--cat-fg);font-family:var(--font-data)}
+.id-hoy-pruebas li{display:flex;flex-direction:column;gap:2px;padding:var(--sp-2) var(--sp-3);border-left:2px solid var(--cat-fg);background:var(--bg-sunken);border-radius:0 var(--r-sm) var(--r-sm) 0}
+.id-hoy-extra{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-4);font-size:var(--fs-13);color:var(--fg-2)}
+.id-hoy-extra li{display:inline-flex;align-items:center;gap:6px}
+.id-hoy-extra svg{width:14px;height:14px;color:var(--cat-fg)}
+.id-hoy .id-link{align-self:flex-start;color:var(--fg-brand);text-decoration:none}
+.id-hoy .id-link:hover{text-decoration:underline}
+@media (max-width:767px){.id-hoy-sem div{grid-template-columns:minmax(0,1fr);gap:2px}}
+
+.id-fases{display:grid;gap:var(--sp-3)}
+@media (min-width:900px){.id-fases{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.id-fase{display:flex;flex-direction:column;gap:6px;padding:var(--sp-3);border:1px solid var(--border-subtle);border-radius:var(--r-md)}
+.id-fase.is-now{border-color:var(--border-brand);background:var(--bg-sunken)}
+.id-fase .t-card,.id-fase p{margin:0}
+.id-fase .eu-btn{align-self:flex-start;margin-top:auto}
+.id-pruebas summary{cursor:pointer;min-height:36px;display:flex;align-items:center}
+.id-pruebas ul{margin:var(--sp-2) 0 0;padding-left:var(--sp-5);display:flex;flex-direction:column;gap:4px;font-size:var(--fs-13);color:var(--fg-2)}
+
+.id-temario{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:var(--sp-2)}
+.id-tm-fase{margin-top:var(--sp-3)}
+.id-tm{padding:var(--sp-3);border:1px solid var(--border-subtle);border-radius:var(--r-md);scroll-margin-top:96px}
+.id-tm.is-now{border-color:var(--border-brand);background:var(--bg-sunken)}
+.id-tm-hd{display:flex;align-items:baseline;gap:var(--sp-2);flex-wrap:wrap}
+.id-tm-bd{display:grid;gap:4px;margin:var(--sp-2) 0 0}
+.id-tm-bd div{display:grid;grid-template-columns:110px minmax(0,1fr);gap:var(--sp-2);font-size:var(--fs-13)}
+.id-tm-bd dt{color:var(--fg-3)}
+.id-tm-bd dd{margin:0;color:var(--fg-1)}
+.id-tm-mat{display:flex;align-items:flex-start;gap:var(--sp-1)}
+.id-tm-mat .eu-iconbtn{width:28px;height:28px;flex-shrink:0}
+.id-tm-form{display:flex;gap:var(--sp-2);flex-wrap:wrap;flex:1}
+.id-tm-form .eu-input{flex:1 1 220px}
+@media (max-width:767px){.id-tm-bd div{grid-template-columns:minmax(0,1fr);gap:0}}
