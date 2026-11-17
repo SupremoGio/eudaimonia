@@ -48,6 +48,14 @@ def weekday_code(d=None):
     return DAY_CODES[d.weekday()]
 
 
+def _col(row, name):
+    """Columna opcional de una fila (sqlite3.Row o dict); None si no existe."""
+    try:
+        return row[name]
+    except (KeyError, IndexError):
+        return None
+
+
 def eligible_today(row, wd=None, d=None):
     """True si el item no tiene restricciones de fecha, o si hoy (o la fecha
     dada) cumple su days_of_week (anclas semanales rotativas, Fase 3), su
@@ -59,6 +67,16 @@ def eligible_today(row, wd=None, d=None):
     de interval_weeks semanas después del ancla)."""
     d  = d or today_date()
     wd = wd or weekday_code(d)
+    # Fechas puntuales (ajuste v2): `fechas` = solo esos días (p. ej. el
+    # autodiagnóstico C1); `excepto_fechas` = esos días no (el repaso del
+    # sábado, que el autodiagnóstico reemplaza).
+    iso = d.isoformat()
+    solo = _col(row, "fechas")
+    if solo and iso not in solo.split(","):
+        return False
+    excepto = _col(row, "excepto_fechas")
+    if excepto and iso in excepto.split(","):
+        return False
     dow = row["days_of_week"]
     if dow and wd not in dow.split(","):
         return False

@@ -2,6 +2,24 @@
    anclas van arriba, en _anchors.html). El ícono se enciende si la virtud se
    tocó hoy (clf.pillars), como hacía la antigua «Cobertura de pilares». #}
 <div class="acta-view acta-virtues" data-view-panel="virtue" role="tabpanel">
+  {# Vista del día (ajuste v2): «Foco de hoy» (touches con foco, máx. 8) y el
+     resto por virtud plegado en «Extras». Sin foco, las tarjetas van abiertas. #}
+  {% if acta_foco %}
+  <section class="eu-card acta-hoy" aria-labelledby="acta-hoy-t">
+    <header class="acta-hoy-hd"><h2 class="acta-hoy-t" id="acta-hoy-t"><i data-lucide="target"></i>Foco de hoy</h2>
+      <span class="t-meta num">{{ acta_foco|selectattr('done_ui')|list|length }}/{{ acta_foco|length }}</span></header>
+    <div class="acta-list">
+      {% for item in acta_foco %}{% include "actividades/_item.html" %}{% endfor %}
+    </div>
+  </section>
+  {% if acta_pillars %}
+  <details class="acta-extras" id="acta-extras">
+    <summary class="eu-card acta-extras-sum"><i data-lucide="layers"></i><span class="t-card">Extras</span>
+      <span class="t-meta num">{{ acta_pillars|sum(attribute='total') }} hábitos · {{ acta_pillars|sum(attribute='done') }} hechos</span>
+      <i data-lucide="chevron-down" class="acta-ocas-chev"></i></summary>
+    <div class="acta-extras-bd">
+  {% endif %}
+  {% endif %}
   {% for p in acta_pillars %}
   <section class="eu-card acta-pillar{% if p.id in clf.pillars %} is-on{% endif %}" data-cat="{{ p.cat }}" data-pillar="{{ p.id }}" aria-labelledby="ap-{{ p.id }}">
     <header class="acta-pillar-hd">
@@ -16,6 +34,7 @@
     <p class="t-meta acta-alldone">Todo hecho en {{ p.name }}.</p>
   </section>
   {% else %}
-  {% if not acta_anchors %}{{ ui.empty('scroll-text', 'Sin actividades', 'Tu checklist está vacío. Activa el modo edición para agregar la primera.') }}{% endif %}
+  {% if not acta_anchors and not acta_foco %}{{ ui.empty('scroll-text', 'Sin actividades', 'Tu checklist está vacío. Activa el modo edición para agregar la primera.') }}{% endif %}
   {% endfor %}
+  {% if acta_foco and acta_pillars %}</div></details>{% endif %}
 </div>

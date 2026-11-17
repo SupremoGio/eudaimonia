@@ -65,9 +65,20 @@ def lt_ok(monkeypatch):
     monkeypatch.setattr(ir, '_call_languagetool', _fake)
 
 
+@pytest.fixture
+def touches_activos(test_db):
+    """El ajuste v2 (idiomas_ajuste_v2_2026_11) desactivó «Repaso de
+    vocabulario» y «Writing journal» (la escritura va en la Sesión B). Estos
+    tests prueban la mecánica de marcar el touch de Acta, que sigue igual
+    cuando el touch está activo."""
+    with database.get_db() as db:
+        db.execute("UPDATE activity_defs SET active=1 WHERE key IN ('idiomas_repaso','idiomas_journal')")
+        db.commit()
+
+
 # ── Sprint 1 ─────────────────────────────────────────────────────────────────
 
-def test_repaso_da_xp_una_vez_por_ronda_y_marca_acta(client):
+def test_repaso_da_xp_una_vez_por_ronda_y_marca_acta(client, touches_activos):
     r = _ronda(client, 3, 'r1')
     assert r['score'] == 3 and r['xp'] >= 6 and r['proximos'] == {'manana': 2, 'espaciadas': 3}
     assert {x['dias'] for x in r['results'] if not x['correct']} == {1}
@@ -80,7 +91,7 @@ def test_repaso_da_xp_una_vez_por_ronda_y_marca_acta(client):
     assert _xp_total() > xp
 
 
-def test_journal_xp_una_vez_al_dia(client, lt_ok):
+def test_journal_xp_una_vez_al_dia(client, lt_ok, touches_activos):
     t = 'Remote work has became more common than ever.'
     r = client.post('/idiomas/api/journal/revisar', json={'text': t, 'lang': 'en'}).get_json()
     assert r['ok'] and r['lt_ok'] and r['score'] == 93 and r['grade'] == 'C2' and r['xp'] >= 5
@@ -91,7 +102,7 @@ def test_journal_xp_una_vez_al_dia(client, lt_ok):
     assert r2['journal']['tendencia'] == [93, 93] and r2['journal']['total'] == 2
 
 
-def test_touch_marcado_a_mano_no_se_duplica(client, lt_ok):
+def test_touch_marcado_a_mano_no_se_duplica(client, lt_ok, touches_activos):
     client.post('/actividades/api/activity/log', json={'key': 'idiomas_journal'})
     assert _logs('idiomas_journal') == 1
     r = client.post('/idiomas/api/journal/revisar', json={'text': 'It has became late.', 'lang': 'en'}).get_json()
@@ -182,12 +193,20 @@ def test_ultimo_por_destreza(client):
     assert fr['skills'][0]['nombre'] == 'Prod. écrite' and fr['skills'][0]['valor'] == 11 and fr['titulo'].startswith('DALF')
 
 
-def test_acta_sube_con_repaso_y_journal(client, lt_ok):
+def test_acta_sube_con_repaso_y_journal(client, lt_ok, touches_activos):
     a0 = client.get('/idiomas/api/estado?lang=en').get_json()['acta']
     _ronda(client, 5, 'z')
     client.post('/idiomas/api/journal/revisar', json={'text': 'It has became late.', 'lang': 'en'})
     a = client.get('/idiomas/api/estado?lang=en').get_json()['acta']
     assert a['total'] == a0['total'] and a['hechos'] == a0['hechos'] + 2
+
+
+def test_ajuste_v2_journal_sin_touch_de_acta(client, lt_ok):
+    """Con el ajuste v2 el journal sigue revisando y guardando, pero ya no da
+    XP de Acta: la escritura cuenta dentro de la Sesión B."""
+    r = client.post('/idiomas/api/journal/revisar', json={'text': 'It has became late.', 'lang': 'en'}).get_json()
+    assert r['ok'] and r['entrada']['score'] is not None and r['xp'] == 0
+    assert _logs('idiomas_journal') == 0
 
 
 # ── Sprint 2–4: página ───────────────────────────────────────────────────────

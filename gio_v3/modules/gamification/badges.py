@@ -226,7 +226,8 @@ def _gather_badge_stats():
         ).fetchone()["c"]
 
         # Salud base activities in last 7 days
-        salud_base_keys = ["colacion", "jugo_verde", "comer_fruta", "dormir_8h", "skincare_noche"]
+        salud_base_keys = ["colacion", "jugo_verde", "comer_fruta", "dormir_8h", "skincare_noche",
+                           "nutricion_dia", "ritual_nocturno"]   # ajuste v2: fusiones
         since_7 = (today_date() - timedelta(days=7)).isoformat()
         salud_base_7d = db.execute(
             "SELECT COUNT(DISTINCT date) as c FROM activity_logs WHERE activity_key IN ({}) AND date >= ?".format(

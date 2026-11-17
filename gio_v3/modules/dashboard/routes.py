@@ -31,7 +31,7 @@ _EU_MODULES_BASE = [
 # Habit → activity keys que la marcan como done si se loguearon hoy
 _MODULE_HABIT_KEYS = {
     'hegemonikon': [
-        ['colacion', 'jugo_verde'],
+        ['colacion', 'jugo_verde', 'nutricion_dia'],
         [],
         ['gym', 'pliometria', 'gol'],
         ['meditar'],
@@ -52,8 +52,8 @@ _MODULE_HABIT_KEYS = {
         [],
     ],
     'cosmopolitismo': [
-        ['leccion_idiomas', 'VividVocab'],
-        ['podcast_idiomas'],
+        ['leccion_idiomas', 'VividVocab', 'anki_idiomas'],
+        ['podcast_idiomas', 'escucha_en', 'escucha_fr'],
         ['conversacion'],
     ],
     'logoi': [
@@ -77,6 +77,7 @@ _SUGGESTION_WINDOWS = {
     'gymbook':        {'weekdays': {0, 1, 2, 3, 4}, 'start': (6, 30),  'end': (23, 0)},
     'dormir_8h':      {'weekdays': None,            'start': (9, 0),   'end': (11, 0)},
     'skincare_noche': {'weekdays': None,            'start': (20, 0),  'end': (23, 30)},
+    'ritual_nocturno': {'weekdays': None,           'start': (20, 0),  'end': (23, 30)},
     'tender_cama':    {'weekdays': None,            'start': (9, 0),   'end': (11, 0)},
 }
 

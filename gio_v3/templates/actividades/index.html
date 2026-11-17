@@ -10,9 +10,9 @@
 
 {# Reflexiones escritas: MIT se edita también en móvil; las de cierre de día
    (gratitud, corrección, síntesis) solo en desktop. Ver /api/reflexion. #}
-{% set REFLECT_KEYS = ['gratitud_diaria', 'correccion_diaria', 'sintesis_activa'] %}
+{% set REFLECT_KEYS = ['gratitud_diaria', 'correccion_diaria', 'sintesis_activa', 'ritual_nocturno'] %}
 {% set REFLECT_ALL_KEYS = ['mit'] %}
-{% set REFLECT_PLACEHOLDERS = {'mit': '¿Cuál es tu tarea más importante hoy?'} %}
+{% set REFLECT_PLACEHOLDERS = {'mit': '¿Cuál es tu tarea más importante hoy?', 'ritual_nocturno': 'Corrección del día y 3 cosas por las que estás agradecido…'} %}
 {% set clf = classification %}
 
 {% block content %}

@@ -107,7 +107,7 @@ GOLD_MIN_PILLARS = 2
 # igual que el ancla completa, pero NO cuenta como ancla hecha para Oro
 # (anclas extra) ni para Diamante, y da solo una fracción del XP.
 ANCLA_MIN_SUFFIX   = "__min"
-ANCLA_MIN_XP_RATIO = 1 / 3
+ANCLA_MIN_XP_RATIO = 0.5   # ajuste v2 (antes 1/3); 0 EC; la racha cuenta el día igual
 
 # ── Diamante proporcional a las anclas del día ──────────────────────────────
 # Exigir TODAS las anclas era desigual entre días: un sábado con 2 anclas
@@ -742,7 +742,7 @@ def _next_rank_criteria(rank, recovery, anchor_ok, extra_anchors,
         return {"key": key, "label": label, "hint": hint, "have": have, "need": need, "ok": have >= need}
 
     if rank == "carbon":
-        hint = "o su versión mínima (⅓ del XP)"
+        hint = "o su versión mínima (50 % del XP)"
         if recovery:
             hint += f" · semana de descarga: o {RECOVERY_HIERRO_TOUCHES} touches"
         return [c("anchor", "Una ancla completa", hint, 1 if anchor_ok else 0, 1)]
