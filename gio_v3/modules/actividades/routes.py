@@ -210,6 +210,12 @@ def index():
     acta_anchors = [i for sk in adefs.SESSIONS for i in ctx["grouped"].get(sk, [])
                     if i.get("effective_type") == "ancla"]
     acta_anchors = list({i["key"]: i for i in acta_anchors}.values())
+    # Anclas de idioma: lo que toca esta semana según el temario del plan C1
+    from modules.idiomas import temario as tm
+    with get_db() as db:
+        _ovr = tm.overrides(db)
+    for i in acta_anchors:
+        i["plan_hoy"] = tm.para_ancla(i["key"], None, _ovr)
     # Vista del día (ajuste v2): los touches con foco (máx. FOCO_MAX) van en
     # «Foco de hoy», bajo las anclas; las tarjetas por virtud con el resto
     # quedan plegadas en «Extras». Sin touches con foco, la vista es la de antes.

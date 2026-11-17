@@ -7525,6 +7525,40 @@ def init_db():
             except Exception as e:
                 print(f"[DB] idiomas_ajuste_v2_2026_11 migration warning: {e}")
 
+        # ── COSMOPOLITISMO — temario del plan C1 v2 (2026-11) ─────────────────
+        # El «Plan C1 · 26 semanas» de Idiomas era el de antes (4 fases, la
+        # última con mock exam): se reemplaza por las 3 fases de 10 semanas del
+        # plan v2, desde el lunes 2026-11-16. El temario semana a semana vive
+        # en modules/idiomas/temario.py; aquí solo se guarda el material que el
+        # usuario cambie (lang_temario_material: el sugerido sigue en el código).
+        db.execute("""CREATE TABLE IF NOT EXISTS lang_temario_material (
+            lang       TEXT    NOT NULL,
+            semana     INTEGER NOT NULL,
+            material   TEXT    NOT NULL,
+            updated_at TEXT    NOT NULL DEFAULT (datetime('now')),
+            PRIMARY KEY (lang, semana)
+        )""")
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='idiomas_plan_v2_temario_2026_11'"
+        ).fetchone():
+            try:
+                db.execute("DELETE FROM lang_plan_checkpoints")
+                db.executemany(
+                    "INSERT INTO lang_plan_checkpoints (fase, nombre, semana_fin, criterio) VALUES (?,?,?,?)",
+                    [(1, "Cimientos C1", 10, "Autodiagnóstico C1 del sábado 2027-01-23 aprobado en inglés y francés"),
+                     (2, "Output y argumentación", 20, "Autodiagnóstico C1 del sábado 2027-04-03 aprobado en inglés y francés"),
+                     (3, "Precisión y registro", 30, "Autodiagnóstico C1 del sábado 2027-06-12 aprobado en inglés y francés")])
+                db.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES ('idiomas_plan_inicio', '2026-11-16')")
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("idiomas_plan_v2_temario_2026_11",
+                     "Plan de Idiomas: 3 fases de 10 semanas desde 2026-11-16 (antes 4 fases / 26 semanas con mock exam); "
+                     "temario en modules/idiomas/temario.py, material propio en lang_temario_material.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] idiomas_plan_v2_temario_2026_11 migration warning: {e}")
+
         # ── NUTRICIÓN v2: el XP pasa por el motor desde esta fecha (el histórico
         # con source='nutricion' no se toca) y un solo recetario con etiqueta
         # FODMAP y momento; el banco de Nutrición se migra sin duplicar.

@@ -1,0 +1,49 @@
+{# «Hoy toca» (temario del plan C1 v2, modules/idiomas/temario.py): la sesión
+   del día con sus bloques y el contenido fijo de la semana, más la escucha,
+   la lectura y Anki. Los días sin sesión (mié/dom) solo trae lo extensivo. #}
+{% if not hoy.antes and not hoy.terminado %}
+{% set s = hoy.sesion %}
+<section class="eu-card id-hoy" id="hoy" aria-labelledby="hoy-t">
+  <div class="id-hoy-hd">
+    <div>
+      <div class="t-eyebrow">Hoy toca · semana {{ hoy.semana }} de {{ hoy.total }} · fase {{ hoy.fase }} · {{ hoy.fase_nombre }}</div>
+      <h2 class="t-section" id="hoy-t">{{ s.titulo if s else 'Día sin sesión: escucha, lectura y Anki' }}</h2>
+    </div>
+    {% if s and s.min %}<span class="eu-badge num">{{ s.min }} min{% if s.minima %} · mínima {{ s.minima }}{% endif %}</span>{% endif %}
+  </div>
+  {% if hoy.ligera %}<p class="t-meta id-hoy-ligera"><i data-lucide="snowflake"></i>{{ hoy.ligera }}</p>{% endif %}
+
+  {% if s and s.tipo in ('A', 'B') %}
+  {% set c = s.contenido %}
+  <dl class="id-hoy-sem">
+    <div><dt class="t-meta">Tema</dt><dd>{{ c.tema }}</dd></div>
+    <div><dt class="t-meta">Foco de la semana</dt><dd>{{ c.foco }}</dd></div>
+    {% if s.tipo == 'A' %}
+    <div><dt class="t-meta">Material{% if c.material_propio %} (tuyo){% else %} sugerido{% endif %}</dt><dd>{{ c.material }}</dd></div>
+    {% else %}
+    <div><dt class="t-meta">Conversación con IA</dt><dd lang="{{ s.lang }}">{{ c.conversacion }}</dd></div>
+    <div><dt class="t-meta">Writing (250–400 palabras)</dt><dd lang="{{ s.lang }}">{{ c.writing }}</dd></div>
+    {% endif %}
+  </dl>
+  {% endif %}
+
+  {% if s and s.tipo == 'C' %}
+  <ol class="id-hoy-pruebas">
+    {% for p, crit in s.pruebas %}<li><span class="t-ui">{{ p }}</span><span class="t-meta">{{ crit }}</span></li>{% endfor %}
+  </ol>
+  <p class="t-meta">Las cuatro pruebas, en inglés y en francés. Si apruebas todo, marca el checkpoint en <a href="/idiomas/?vista=plan">Plan</a>.</p>
+  {% elif s and s.bloques %}
+  <ol class="id-hoy-bloques">
+    {% for m, b in s.bloques %}<li><span class="num">{{ m }}′</span><span>{{ b }}{% if s.tipo == 'R' and loop.last %} · esta semana en {{ s.idioma_peli|lower }}{% endif %}</span></li>{% endfor %}
+  </ol>
+  <p class="t-meta">Versión mínima ({{ s.minima }} min): {{ s.minima_txt }}.</p>
+  {% endif %}
+
+  <ul class="id-hoy-extra" aria-label="También hoy">
+    {% if hoy.escucha %}<li><i data-lucide="headphones"></i>Escucha {{ hoy.escucha.idioma|lower }} · {{ hoy.escucha.min }} min</li>
+    <li><i data-lucide="book-open"></i>Lectura {{ hoy.lectura.idioma|lower }} · {{ hoy.lectura.min }} min</li>{% endif %}
+    <li><i data-lucide="layers"></i>Anki EN+FR · 10 min</li>
+  </ul>
+  <a class="t-meta id-link" href="/idiomas/?vista=plan#sem-{{ hoy.semana }}">Ver el temario completo →</a>
+</section>
+{% endif %}
